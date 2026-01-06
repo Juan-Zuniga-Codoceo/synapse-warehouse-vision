@@ -63,8 +63,13 @@ app.use((err, req, res, next) => {
 
 // Start server
 const PORT = config.server.port;
-app.listen(PORT, () => {
-    console.log(`
+
+import { initDB } from './src/database/init_db.js';
+
+// Initialize DB then start server
+initDB().then(() => {
+    app.listen(PORT, () => {
+        console.log(`
 ╔═══════════════════════════════════════════════════════╗
 ║     Warehouse Vision 3D - Server Running              ║
 ╠═══════════════════════════════════════════════════════╣
@@ -73,7 +78,11 @@ app.listen(PORT, () => {
 ║  Database:   ${config.database.path}                    ║
 ║  Frontend:   ${config.server.corsOrigin}  ║
 ╚═══════════════════════════════════════════════════════╝
-  `);
+      `);
+    });
+}).catch(err => {
+    console.error('Failed to initialize database:', err);
+    process.exit(1);
 });
 
 export default app;
