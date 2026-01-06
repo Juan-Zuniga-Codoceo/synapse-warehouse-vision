@@ -5,7 +5,7 @@
     "main": "server.js",
     "type": "module",
     "scripts": {
-        "start": "node server.js",
+        "start": "node src/database/init_db.js && node server.js",
         "dev": "nodemon server.js",
         "build": "npm install && cd frontend && npm install && npm run build",
         "init-db": "node src/database/init_db.js",
