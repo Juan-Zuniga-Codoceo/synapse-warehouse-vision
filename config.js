@@ -6,18 +6,18 @@
 export const config = {
   // Main warehouse/branch ID - Update this when deploying to different locations
   MAIN_WAREHOUSE_ID: 1,
-  
+
   // Database configuration
   database: {
-    path: './warehouse.db'
+    path: process.env.DATABASE_PATH || './warehouse.db'
   },
-  
+
   // Server configuration
   server: {
     port: process.env.PORT || 3001,
     corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173'
   },
-  
+
   // Authentication (mock for now, replace with BiocareTask auth)
   auth: {
     enabled: true,

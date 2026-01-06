@@ -5,8 +5,23 @@
 
 import sqlite3 from 'sqlite3';
 import config from '../../config.js';
+import fs from 'fs';
+import path from 'path';
 
-const db = new sqlite3.Database(config.database.path, (err) => {
+// Ensure database directory exists
+const dbPath = config.database.path;
+const dbDir = path.dirname(dbPath);
+
+if (!fs.existsSync(dbDir)) {
+    try {
+        fs.mkdirSync(dbDir, { recursive: true });
+        console.log(`Created database directory: ${dbDir}`);
+    } catch (err) {
+        console.error(`Error creating database directory: ${err.message}`);
+    }
+}
+
+const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error('Database connection error:', err);
     } else {
