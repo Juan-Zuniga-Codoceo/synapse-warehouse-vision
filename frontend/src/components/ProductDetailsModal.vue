@@ -48,6 +48,19 @@
               </div>
             </div>
           </div>
+
+          <div v-if="otherLocations.length > 0" class="info-section other-locations">
+            <h4>📦 Otras Ubicaciones ({{ otherLocations.length }})</h4>
+            <div class="locations-list">
+              <div v-for="loc in otherLocations" :key="loc.id" class="other-location-item">
+                <span class="loc-badge">{{ loc.zona }}-{{ loc.pasillo }}-{{ loc.rack }}</span>
+                <span class="loc-details">Nivel {{ loc.nivel }} - Pos {{ loc.posicion }}</span>
+                <span class="loc-expiry" :class="getExpirationClass(loc)">
+                  {{ loc.alert_status === 'EXPIRED' ? 'VENCIDO' : loc.alert_status === 'EXPIRING_SOON' ? 'POR VENCER' : 'OK' }}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="modal-actions">
@@ -59,7 +72,7 @@
 </template>
 
 <script>
-import { onMounted, watch } from 'vue'
+import { onMounted, watch, ref } from 'vue'
 
 export default {
   name: 'ProductDetailsModal',
@@ -75,12 +88,36 @@ export default {
   },
   emits: ['close'],
   setup(props, { emit }) {
+    const otherLocations = ref([])
+
+    const fetchOtherLocations = async () => {
+      if (!props.product || !props.product.sku) return
+      
+      try {
+        const token = localStorage.getItem('token')
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/locations/search/${props.product.sku}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        const data = await response.json()
+        if (data.success) {
+          // Filter out current location
+          otherLocations.value = data.data.filter(l => l.id !== props.product.location_id)
+        }
+      } catch (error) {
+        console.error('Error fetching other locations:', error)
+      }
+    }
+
     onMounted(() => {
       console.log('ProductDetailsModal mounted')
     })
 
     watch(() => props.isOpen, (val) => {
-      console.log('ProductDetailsModal isOpen changed to:', val)
+      if (val) {
+        fetchOtherLocations()
+      } else {
+        otherLocations.value = []
+      }
     })
 
     const close = () => {
@@ -118,7 +155,8 @@ export default {
       close,
       formatDate,
       getExpirationClass,
-      getStatusLabel
+      getStatusLabel,
+      otherLocations
     }
   }
 }
@@ -308,5 +346,52 @@ export default {
 @keyframes slideUp {
   from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
+}
+
+.other-locations h4 {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.locations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.other-location-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.loc-badge {
+  font-family: 'Monaco', monospace;
+  font-weight: 700;
+  color: var(--primary);
+  background: rgba(4, 157, 217, 0.1);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+}
+
+.loc-details {
+  flex: 1;
+  color: var(--text-secondary);
+}
+
+.loc-expiry {
+  font-size: 0.75rem;
+  font-weight: 700;
 }
 </style>

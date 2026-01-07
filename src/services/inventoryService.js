@@ -187,6 +187,21 @@ export const inventoryService = {
     `, [config.MAIN_WAREHOUSE_ID]);
 
     return stats;
+  },
+
+  /**
+   * Search unique products by name or SKU
+   */
+  async searchProducts(queryStr) {
+    const sql = `
+      SELECT DISTINCT product_name, sku, alert_threshold_days
+      FROM inventory_items
+      WHERE (product_name LIKE ? OR sku LIKE ?)
+      ORDER BY product_name
+      LIMIT 10
+    `;
+    const searchPattern = `%${queryStr}%`;
+    return await query(sql, [searchPattern, searchPattern]);
   }
 };
 

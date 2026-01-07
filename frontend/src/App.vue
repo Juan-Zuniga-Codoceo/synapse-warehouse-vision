@@ -28,7 +28,11 @@
         @rack-selected="handleRackSelected"
       />
       
-      <aside class="side-panel">
+      <button class="mobile-toggle-btn" @click="togglePanel">
+        {{ isPanelOpen ? '⬇️ Ocultar Panel' : '⬆️ Ver Panel' }}
+      </button>
+
+      <aside class="side-panel" :class="{ 'mobile-open': isPanelOpen }">
         <div class="panel-content">
           <!-- Alerts Panel -->
           <AlertsPanel 
@@ -211,6 +215,8 @@ export default {
     const alertsPanel = ref(null)
     const alertCount = ref(0)
     const filterParams = ref({}) // New ref to hold filter parameters
+    const isPanelOpen = ref(false)
+    const togglePanel = () => isPanelOpen.value = !isPanelOpen.value
     
     const loadLocations = async () => { // No longer takes filters as argument
       try {
@@ -472,7 +478,9 @@ export default {
       handleSearch,
       handleFilter,
       handleAlertClick,
-      handleSetupSuccess
+      handleSetupSuccess,
+      isPanelOpen,
+      togglePanel
     }
   }
 }

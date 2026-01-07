@@ -9,15 +9,31 @@
         
         <form @submit.prevent="handleSubmit">
           <!-- Product Name -->
-          <div class="input-group">
+          <div class="input-group relative">
             <label>Nombre del Producto *</label>
             <input 
-              v-model="form.product_name" 
+              :value="form.product_name"
+              @input="handleSearch"
+              @blur="closeSearch"
               type="text" 
               placeholder="Ej: Guantes Nitrilo Talla M"
               required
               ref="firstInput"
+              autocomplete="off"
             />
+            
+            <!-- Search Results Dropdown -->
+            <div v-if="showSearchResults" class="search-results">
+              <div 
+                v-for="(result, index) in searchResults" 
+                :key="index"
+                class="search-item"
+                @mousedown="selectProduct(result)"
+              >
+                <div class="item-name">{{ result.product_name }}</div>
+                <div class="item-sku">{{ result.sku }}</div>
+              </div>
+            </div>
           </div>
           
           <!-- SKU -->
@@ -135,6 +151,63 @@ export default {
     })
     
     const customDays = ref(null)
+    const searchResults = ref([])
+    const showSearchResults = ref(false)
+    const isSearching = ref(false)
+    let searchTimeout = null
+
+    const handleSearch = async (event) => {
+      const query = event.target.value
+      form.value.product_name = query
+      
+      if (query.length < 2) {
+        searchResults.value = []
+        showSearchResults.value = false
+        return
+      }
+
+      if (searchTimeout) clearTimeout(searchTimeout)
+
+      searchTimeout = setTimeout(async () => {
+        isSearching.value = true
+        try {
+          const token = localStorage.getItem('token')
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/inventory/search?q=${encodeURIComponent(query)}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+          const data = await response.json()
+          if (data.success) {
+            searchResults.value = data.data
+            showSearchResults.value = data.data.length > 0
+          }
+        } catch (error) {
+          console.error('Search error:', error)
+        } finally {
+          isSearching.value = false
+        }
+      }, 300)
+    }
+
+    const selectProduct = (product) => {
+      form.value.product_name = product.product_name
+      form.value.sku = product.sku
+      form.value.alert_threshold_days = product.alert_threshold_days
+      
+      // Update custom threshold if needed
+      if (!thresholdOptions.slice(0, 3).some(opt => opt.value === product.alert_threshold_days)) {
+        customDays.value = product.alert_threshold_days
+      } else {
+        customDays.value = null
+      }
+      
+      showSearchResults.value = false
+    }
+
+    const closeSearch = () => {
+      setTimeout(() => {
+        showSearchResults.value = false
+      }, 200)
+    }
     
     // Medical-grade alert thresholds
     const thresholdOptions = [
@@ -229,7 +302,12 @@ export default {
       isValid,
       selectThreshold,
       handleSubmit,
-      close
+      close,
+      searchResults,
+      showSearchResults,
+      handleSearch,
+      selectProduct,
+      closeSearch
     }
   }
 }
@@ -451,6 +529,49 @@ input[type="date"] {
   .threshold-options {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+.relative {
+  position: relative;
+}
+
+.search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--primary);
+  border-radius: 0 0 4px 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.search-item {
+  padding: 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.2s;
+}
+
+.search-item:last-child {
+  border-bottom: none;
+}
+
+.search-item:hover {
+  background: var(--bg-hover);
+}
+
+.item-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.item-sku {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
 }
 </style>
 

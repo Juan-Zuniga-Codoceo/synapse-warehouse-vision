@@ -33,6 +33,23 @@ export const inventoryController = {
     },
 
     /**
+     * GET /api/inventory/search
+     * Search products by name or SKU
+     */
+    async searchProducts(req, res, next) {
+        try {
+            const { q } = req.query;
+            if (!q) {
+                return res.json({ success: true, data: [] });
+            }
+            const products = await inventoryService.searchProducts(q);
+            res.json({ success: true, data: products });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    /**
      * GET /api/inventory/items/:id
      * Get specific inventory item
      */

@@ -15,6 +15,7 @@ router.use(authenticate);
 // Alerts and stats
 router.get('/alerts', inventoryController.getAlerts);
 router.get('/stats', inventoryController.getStats);
+router.get('/search', inventoryController.searchProducts);
 
 // Inventory items CRUD
 router.get('/items/:id', inventoryController.getItem);

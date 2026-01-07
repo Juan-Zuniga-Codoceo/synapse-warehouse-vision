@@ -144,6 +144,27 @@ export const locationService = {
       ORDER BY il.timestamp DESC
       LIMIT ?
     `, [config.MAIN_WAREHOUSE_ID, limit]);
+  },
+
+  /**
+   * Search locations by SKU
+   */
+  async searchBySKU(sku) {
+    return await query(`
+      SELECT 
+        l.id, l.zona, l.pasillo, l.rack, l.nivel, l.posicion,
+        ii.product_name, ii.sku, ii.expiration_date, ii.alert_threshold_days,
+        CASE
+          WHEN ii.expiration_date IS NULL THEN 'NO_EXPIRATION'
+          WHEN julianday(ii.expiration_date) < julianday('now') THEN 'EXPIRED'
+          WHEN julianday(ii.expiration_date) - julianday('now') <= ii.alert_threshold_days THEN 'EXPIRING_SOON'
+          ELSE 'NORMAL'
+        END as alert_status
+      FROM locations l
+      JOIN inventory_items ii ON l.id = ii.location_id
+      WHERE l.warehouse_id = ? AND ii.sku = ?
+      ORDER BY l.zona, l.pasillo, l.rack
+    `, [config.MAIN_WAREHOUSE_ID, sku]);
   }
 };
 
